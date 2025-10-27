@@ -1,153 +1,140 @@
-// MainFrame.java
 package com.easydiscord.launcher.ui;
 
 import com.easydiscord.launcher.config.LauncherConfig;
-import com.easydiscord.launcher.ui.components.SettingsPanel;
-import com.easydiscord.launcher.ui.components.DeveloperPanel;
-import com.easydiscord.launcher.utils.DiscordStarter;
+import com.easydiscord.launcher.config.DiscordConfig;
+import com.easydiscord.launcher.discord.DiscordManager;
+import com.easydiscord.launcher.updater.UpdateChecker;
+import com.easydiscord.launcher.utils.FileUtils;
+import com.easydiscord.launcher.utils.JSONUtils;
+import com.easydiscord.launcher.ui.components.CustomButton;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class MainFrame extends JFrame {
-    private LauncherConfig config;
+    private LauncherConfig launcherConfig;
+    private DiscordConfig discordConfig;
     private JTabbedPane tabbedPane;
     private SettingsPanel settingsPanel;
     private DeveloperPanel developerPanel;
-    
-    public MainFrame(LauncherConfig config) {
-        this.config = config;
+
+    public MainFrame() {
+        initializeConfig();
         initializeUI();
-        setupEvents();
+        loadConfig();
     }
-    
+
+    private void initializeConfig() {
+        // Создаем директорию для конфигов
+        FileUtils.createDirectory(launcherConfig.getConfigDir());
+
+        // Загружаем конфигурации
+        launcherConfig = JSONUtils.loadFromFile(launcherConfig.getConfigFile(), LauncherConfig.class);
+        discordConfig = JSONUtils.loadFromFile(launcherConfig.getConfigDir() + "/discord_config.json", DiscordConfig.class);
+
+        // Если путь к Discord не установлен, пытаемся найти автоматически
+        if (launcherConfig.getDiscordPath().isEmpty()) {
+            launcherConfig.setDiscordPath(FileUtils.findDiscordPath());
+        }
+    }
+
     private void initializeUI() {
         setTitle("EasyDiscord Launcher");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 500);
         setLocationRelativeTo(null);
-        setIconImage(createAppIcon());
-        
-        // Создаем вкладки
-        tabbedPane = new JTabbedPane();
-        
-        // Панель основных настроек
-        settingsPanel = new SettingsPanel(config);
-        tabbedPane.addTab("Настройки", settingsPanel);
-        
-        // Панель для разработчиков (только если включен режим разработчика)
-        if (config.isDeveloperMode()) {
-            developerPanel = new DeveloperPanel(config);
-            tabbedPane.addTab("Developer", developerPanel);
-        }
-        
-        // Панель запуска
-        JPanel launchPanel = createLaunchPanel();
-        tabbedPane.addTab("Запуск", launchPanel);
-        
-        add(tabbedPane, BorderLayout.CENTER);
-    }
-    
-    private JPanel createLaunchPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Информация о конфигурации
-        JTextArea infoArea = new JTextArea();
-        infoArea.setEditable(false);
-        infoArea.setBackground(new Color(30, 30, 30));
-        infoArea.setForeground(Color.WHITE);
-        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        infoArea.setText(getConfigSummary());
-        
-        JScrollPane scrollPane = new JScrollPane(infoArea);
-        scrollPane.setPreferredSize(new Dimension(500, 300));
-        
-        // Кнопка запуска
-        JButton launchButton = new JButton("Запустить Discord");
-        launchButton.setFont(new Font("Arial", Font.BOLD, 16));
-        launchButton.setBackground(new Color(88, 101, 242));
-        launchButton.setForeground(Color.WHITE);
-        launchButton.setFocusPainted(false);
-        launchButton.addActionListener(e -> launchDiscord());
-        
-        panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(launchButton, BorderLayout.SOUTH);
-        
-        return panel;
-    }
-    
-    private void setupEvents() {
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                config.save();
-            }
-        });
-    }
-    
-    private void launchDiscord() {
+        setResizable(false);
+
+        // Устанавливаем темную тему
         try {
-            boolean success = DiscordStarter.launchDiscord(config);
-            if (success) {
-                JOptionPane.showMessageDialog(this, 
-                    "Discord запущен с выбранными настройками!", 
-                    "Успех", 
+            UIManager.setLookAndFeel(UIManager.getLookAndFeel());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Создаем основной интерфейс
+        createMainPanel();
+    }
+
+    private void createMainPanel() {
+        setLayout(new BorderLayout());
+
+        // Заголовок
+        JLabel titleLabel = new JLabel("EasyDiscord", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(new Color(88, 101, 242));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        add(titleLabel, BorderLayout.NORTH);
+
+        // Панель с вкладками
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setBackground(new Color(47, 49, 54));
+        tabbedPane.setForeground(Color.WHITE);
+
+        settingsPanel = new SettingsPanel(discordConfig);
+        tabbedPane.addTab("Основные настройки", settingsPanel);
+
+        if (launcherConfig.isDeveloperMode()) {
+            developerPanel = new DeveloperPanel(launcherConfig);
+            tabbedPane.addTab("Режим разработчика", developerPanel);
+        }
+
+        add(tabbedPane, BorderLayout.CENTER);
+
+        // Панель с кнопками
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.setBackground(new Color(47, 49, 54));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+
+        CustomButton launchButton = new CustomButton("Запустить Discord");
+        launchButton.addActionListener(e -> launchDiscord());
+
+        CustomButton saveButton = new CustomButton("Сохранить настройки");
+        saveButton.addActionListener(e -> saveConfig());
+
+        buttonPanel.add(launchButton);
+        buttonPanel.add(saveButton);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void launchDiscord() {
+        saveConfig();
+
+        // Проверяем обновления
+        UpdateChecker.checkForUpdates(launcherConfig.isAutoUpdate());
+
+        // Запускаем Discord
+        boolean success = DiscordManager.launchDiscord(launcherConfig.getDiscordPath(), discordConfig);
+
+        if (success) {
+            JOptionPane.showMessageDialog(this,
+                    "Discord запущен с выбранными настройками!",
+                    "Успех",
                     JOptionPane.INFORMATION_MESSAGE);
-                config.save();
-            } else {
-                JOptionPane.showMessageDialog(this,
+
+            // Закрываем лаунчер после успешного запуска
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this,
                     "Не удалось запустить Discord. Проверьте путь к приложению.",
                     "Ошибка",
                     JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                "Ошибка при запуске: " + e.getMessage(),
-                "Ошибка",
-                JOptionPane.ERROR_MESSAGE);
         }
     }
-    
-    private String getConfigSummary() {
-        return String.format(
-            "=== Конфигурация EasyDiscord ===\n\n" +
-            "Режим разработчика: %s\n" +
-            "Discord Developer Mode: %s\n" +
-            "Убрать мусор: %s\n" +
-            "Компактный режим: %s\n" +
-            "Кастомный CSS: %s\n" +
-            "Экспериментальные функции: %s\n" +
-            "Путь к Discord: %s\n\n" +
-            "=== Параметры запуска ===\n%s",
-            config.isDeveloperMode(),
-            config.getDiscordConfig().isDeveloperMode(),
-            config.getDiscordConfig().isRemoveClutter(),
-            config.getDiscordConfig().isCompactMode(),
-            config.getDiscordConfig().isCustomCssEnabled(),
-            config.getDiscordConfig().isExperimentalFeatures(),
-            config.getDiscordPath(),
-            DiscordStarter.getLaunchCommand(config)
-        );
+
+    private void loadConfig() {
+        // Конфиг уже загружен в initializeConfig()
+        System.out.println("Конфигурация загружена");
     }
-    
-    private Image createAppIcon() {
-        // Создаем простую иконку
-        BufferedImage icon = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = icon.createGraphics();
-        
-        // Градиентный фон
-        GradientPaint gradient = new GradientPaint(0, 0, new Color(88, 101, 242), 
-                                                 32, 32, new Color(255, 115, 250));
-        g2d.setPaint(gradient);
-        g2d.fillRoundRect(0, 0, 32, 32, 8, 8);
-        
-        // Буква "E"
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 20));
-        g2d.drawString("E", 10, 22);
-        
-        g2d.dispose();
-        return icon;
+
+    private void saveConfig() {
+        JSONUtils.saveToFile(launcherConfig.getConfigFile(), launcherConfig);
+        JSONUtils.saveToFile(launcherConfig.getConfigDir() + "/discord_config.json", discordConfig);
+
+        JOptionPane.showMessageDialog(this,
+                "Настройки сохранены!",
+                "Сохранение",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 }

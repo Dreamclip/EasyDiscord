@@ -1,33 +1,44 @@
-// FileUtils.java
 package com.easydiscord.launcher.utils;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 
 public class FileUtils {
-    public static String readFile(File file) throws IOException {
-        StringBuilder content = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append("\n");
+
+    public static void createDirectory(String path) {
+        try {
+            Files.createDirectories(Paths.get(path));
+        } catch (IOException e) {
+            System.err.println("Ошибка создания директории: " + e.getMessage());
+        }
+    }
+
+    public static boolean fileExists(String path) {
+        return Files.exists(Paths.get(path));
+    }
+
+    public static void writeFile(String path, String content) throws IOException {
+        Files.write(Paths.get(path), content.getBytes());
+    }
+
+    public static String readFile(String path) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(path)));
+    }
+
+    public static String findDiscordPath() {
+        String[] possiblePaths = {
+                System.getenv("LOCALAPPDATA") + "\\Discord",
+                System.getenv("PROGRAMFILES") + "\\Discord",
+                System.getenv("PROGRAMFILES(X86)") + "\\Discord",
+                "/usr/bin/discord",
+                "/Applications/Discord.app/Contents/MacOS"
+        };
+
+        for (String path : possiblePaths) {
+            if (fileExists(path)) {
+                return path;
             }
         }
-        return content.toString();
-    }
-    
-    public static void writeFile(File file, String content) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-            writer.write(content);
-        }
-    }
-    
-    public static void ensureDirectoryExists(String path) {
-        File dir = new File(path);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        return "";
     }
 }

@@ -1,46 +1,37 @@
-// DiscordConfig.java
 package com.easydiscord.launcher.config;
 
 public class DiscordConfig {
-    private boolean developerMode;
-    private boolean disableHardwareAcceleration;
-    private boolean customCssEnabled;
-    private String customCss;
-    private boolean removeClutter;
-    private boolean compactMode;
-    private boolean experimentalFeatures;
-    
-    public DiscordConfig() {
-        this.developerMode = false;
-        this.disableHardwareAcceleration = false;
-        this.customCssEnabled = false;
-        this.customCss = "";
-        this.removeClutter = true;
-        this.compactMode = false;
-        this.experimentalFeatures = false;
-    }
-    
+    private boolean developerMode = false;
+    private boolean disableHardwareAcceleration = false;
+    private boolean customCSS = true;
+    private boolean removeGiftButton = true;
+    private boolean removeNitroButton = true;
+    private boolean compactMode = false;
+    private boolean transparentWindow = false;
+    private String customTheme = "default";
+
     // Геттеры и сеттеры
     public boolean isDeveloperMode() { return developerMode; }
     public void setDeveloperMode(boolean developerMode) { this.developerMode = developerMode; }
-    
+
     public boolean isDisableHardwareAcceleration() { return disableHardwareAcceleration; }
-    public void setDisableHardwareAcceleration(boolean disableHardwareAcceleration) { 
-        this.disableHardwareAcceleration = disableHardwareAcceleration; 
-    }
-    
-    public boolean isCustomCssEnabled() { return customCssEnabled; }
-    public void setCustomCssEnabled(boolean customCssEnabled) { this.customCssEnabled = customCssEnabled; }
-    
-    public String getCustomCss() { return customCss; }
-    public void setCustomCss(String customCss) { this.customCss = customCss; }
-    
-    public boolean isRemoveClutter() { return removeClutter; }
-    public void setRemoveClutter(boolean removeClutter) { this.removeClutter = removeClutter; }
-    
+    public void setDisableHardwareAcceleration(boolean disable) { this.disableHardwareAcceleration = disable; }
+
+    public boolean isCustomCSS() { return customCSS; }
+    public void setCustomCSS(boolean customCSS) { this.customCSS = customCSS; }
+
+    public boolean isRemoveGiftButton() { return removeGiftButton; }
+    public void setRemoveGiftButton(boolean remove) { this.removeGiftButton = remove; }
+
+    public boolean isRemoveNitroButton() { return removeNitroButton; }
+    public void setRemoveNitroButton(boolean remove) { this.removeNitroButton = remove; }
+
     public boolean isCompactMode() { return compactMode; }
     public void setCompactMode(boolean compactMode) { this.compactMode = compactMode; }
-    
-    public boolean isExperimentalFeatures() { return experimentalFeatures; }
-    public void setExperimentalFeatures(boolean experimentalFeatures) { this.experimentalFeatures = experimentalFeatures; }
+
+    public boolean isTransparentWindow() { return transparentWindow; }
+    public void setTransparentWindow(boolean transparent) { this.transparentWindow = transparent; }
+
+    public String getCustomTheme() { return customTheme; }
+    public void setCustomTheme(String theme) { this.customTheme = theme; }
 }
